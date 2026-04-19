@@ -1,0 +1,66 @@
+blueprint:
+  name: Barnabee / VACA — auto-pull logs on error
+  description: >
+    When a VACA satellite fires `vaca_error_occurred` at severity `error` or
+    `fatal`, automatically invoke the `vaca.get_logs` service so the rolling
+    log buffer is captured to `/config/vaca_logs/` before it rolls over.
+    Optionally also creates a persistent notification.
+  domain: automation
+  source_url: https://github.com/trfife/vaca-barnabee-integration/blob/main/blueprints/automation/vaca/auto_pull_logs_on_error.yaml
+  input:
+    min_severity:
+      name: Minimum severity
+      description: Only react to events at or above this severity.
+      default: error
+      selector:
+        select:
+          options:
+            - info
+            - warn
+            - error
+            - fatal
+    notify:
+      name: Create persistent notification
+      description: Drop a persistent notification with the error details.
+      default: true
+      selector:
+        boolean:
+
+variables:
+  min_severity: !input min_severity
+  notify: !input notify
+  severity_order:
+    info: 0
+    warn: 1
+    error: 2
+    fatal: 3
+
+trigger:
+  - platform: event
+    event_type: vaca_error_occurred
+
+condition:
+  - condition: template
+    value_template: >
+      {% set got = (severity_order[trigger.event.data.severity] | default(-1)) %}
+      {% set need = (severity_order[min_severity] | default(2)) %}
+      {{ got >= need }}
+
+action:
+  - service: vaca.get_logs
+    data:
+      device_id: "{{ trigger.event.data.device_id }}"
+  - if:
+      - "{{ notify }}"
+    then:
+      - service: persistent_notification.create
+        data:
+          title: "VACA error on {{ trigger.event.data.satellite | default(trigger.event.data.device_id) }}"
+          notification_id: "vaca_error_{{ trigger.event.data.device_id }}"
+          message: >
+            **{{ trigger.event.data.severity | upper }}** —
+            `{{ trigger.event.data.component }}/{{ trigger.event.data.code }}`
+
+            {{ trigger.event.data.message }}
+
+            Logs auto-pulled to `/config/vaca_logs/`.

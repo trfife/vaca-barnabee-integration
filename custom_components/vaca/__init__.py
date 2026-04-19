@@ -83,6 +83,34 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         _handle_get_logs,
     )
 
+    async def _handle_reset_pipeline(call) -> None:
+        """Ask one or more satellites to reset their pipeline state."""
+        device_ids = call.data.get("device_id") or []
+        if isinstance(device_ids, str):
+            device_ids = [device_ids]
+
+        matched = 0
+        for entry_item in hass.data.get(DOMAIN, {}).values():
+            device = getattr(entry_item, "device", None)
+            if device is None:
+                continue
+            if device_ids and device.device_id not in device_ids:
+                continue
+            device.send_custom_action(CustomActions.RESET_PIPELINE)
+            matched += 1
+
+        if not matched:
+            _LOGGER.warning(
+                "vaca.reset_pipeline: no matching satellite found (device_id=%s)",
+                device_ids or "<all>",
+            )
+
+    hass.services.async_register(
+        DOMAIN,
+        "reset_pipeline",
+        _handle_reset_pipeline,
+    )
+
     return True
 
 

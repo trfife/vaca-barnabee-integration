@@ -215,6 +215,13 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
                 # to the rest of HA and supports offline analysis.
                 await self._save_logs_response(evt.event_data)
 
+            elif evt.event_type == "crash-report" and evt.event_data:
+                # Persisted uncaught exception from the previous session.
+                # Save under /config/vaca_logs/crashes/ and fire a bus
+                # event so an operator can be notified / orchestrator can
+                # investigate.
+                await self._save_crash_report(evt.event_data)
+
             async_dispatcher_send(
                 self.hass,
                 f"{DOMAIN}_{self.device.device_id}_{evt.event_type}_update",
@@ -268,6 +275,50 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
             )
         except Exception:  # pragma: no cover
             _LOGGER.exception("Failed to save logs-response from %s", self.device.device_id)
+
+    async def _save_crash_report(self, data: dict[str, Any]) -> None:
+        """Persist a crash-report payload to /config/vaca_logs/crashes/."""
+        import os
+        from datetime import datetime
+
+        try:
+            content = data.get("content", "")
+            fname = data.get("filename", "crash.txt")
+            if not content:
+                return
+
+            def _write() -> str:
+                crash_dir = self.hass.config.path("vaca_logs", "crashes")
+                os.makedirs(crash_dir, exist_ok=True)
+                ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+                safe_name = "".join(
+                    c if c.isalnum() or c in "-_." else "_" for c in fname
+                )
+                path = os.path.join(
+                    crash_dir, f"{self.device.device_id}-{ts}-{safe_name}"
+                )
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                return path
+
+            path = await self.hass.async_add_executor_job(_write)
+            _LOGGER.warning(
+                "Saved crash report from %s to %s",
+                self.device.device_id,
+                path,
+            )
+            self.hass.bus.async_fire(
+                "vaca_crash_reported",
+                {
+                    "device_id": self.device.device_id,
+                    "satellite": self.entity_id,
+                    "path": path,
+                    "filename": fname,
+                    "size": data.get("size", 0),
+                },
+            )
+        except Exception:  # pragma: no cover
+            _LOGGER.exception("Failed to save crash-report from %s", self.device.device_id)
 
     async def _connect(self) -> None:
         """Connect to satellite over TCP.  Uses custom TCP client to allow callbacks on send."""

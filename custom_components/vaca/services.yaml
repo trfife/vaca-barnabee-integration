@@ -15,3 +15,21 @@ get_logs:
       selector:
         device:
           integration: vaca
+
+reset_pipeline:
+  name: Reset pipeline
+  description: >
+    Force one or more VACA satellites to abort their current pipeline and
+    return to IDLE. Useful as a self-heal action when a satellite gets
+    stuck in LISTENING/THINKING/TALKING.
+  fields:
+    device_id:
+      name: Device ID
+      description: >
+        HA device_id of the satellite (optional; omit to reset all
+        connected satellites). Accepts a single id or a list.
+      required: false
+      example: "abc123def456"
+      selector:
+        device:
+          integration: vaca

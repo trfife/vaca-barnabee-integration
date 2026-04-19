@@ -39,6 +39,7 @@ class CustomActions(StrEnum):
     TOAST_MESSAGE = "toast-message"
     WAKE = "wake"
     GET_LOGS = "get-logs"
+    RESET_PIPELINE = "reset-pipeline"
 
 
 @dataclass

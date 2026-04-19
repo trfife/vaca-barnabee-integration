@@ -1,0 +1,55 @@
+blueprint:
+  name: Barnabee / VACA — auto-recover stuck pipeline
+  description: >
+    If a VACA satellite's pipeline stage sensor stays in LISTENING, THINKING,
+    or TALKING for longer than a threshold, fire the `reset-pipeline` custom
+    action so the satellite self-heals without a full app restart. Requires
+    the `sensor.<device>_pipeline_stage` sensor (from P4.5a heartbeat).
+  domain: automation
+  source_url: https://github.com/trfife/vaca-barnabee-integration/blob/main/blueprints/automation/vaca/auto_recover_stuck_pipeline.yaml
+  input:
+    pipeline_stage_sensor:
+      name: Pipeline stage sensor
+      description: The `*_pipeline_stage` sensor for this VACA device.
+      selector:
+        entity:
+          domain: sensor
+    device:
+      name: VACA device
+      description: The VACA device to reset.
+      selector:
+        device:
+          integration: vaca
+    stuck_minutes:
+      name: Stuck threshold (minutes)
+      description: How long the pipeline must be non-NONE before resetting.
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 30
+          unit_of_measurement: min
+
+variables:
+  stuck_minutes: !input stuck_minutes
+
+trigger:
+  - platform: template
+    value_template: >
+      {% set s = states(pipeline_stage_sensor) %}
+      {% set age = (now() - states[pipeline_stage_sensor].last_changed).total_seconds() %}
+      {{ s not in ['NONE', 'unknown', 'unavailable', 'none'] and age > (stuck_minutes | int * 60) }}
+    variables:
+      pipeline_stage_sensor: !input pipeline_stage_sensor
+
+action:
+  - service: vaca.reset_pipeline
+    data:
+      device_id: !input device
+  - service: persistent_notification.create
+    data:
+      title: "VACA auto-recovered stuck pipeline"
+      message: >
+        Pipeline stage was `{{ states(pipeline_stage_sensor) }}` for
+        more than {{ stuck_minutes }} min. Sent `reset-pipeline` to
+        self-heal.

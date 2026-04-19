@@ -62,6 +62,11 @@ async def async_setup_entry(
         WyomingSatelliteLastSelftestPassedSensor(device),
         WyomingSatelliteLastSelftestDeltaSensor(device),
         WyomingSatelliteLastSelftestAtSensor(device),
+        WyomingSatellitePipelineWakeToAudioSensor(device),
+        WyomingSatellitePipelineSttSensor(device),
+        WyomingSatellitePipelineLlmSensor(device),
+        WyomingSatellitePipelineTtsSensor(device),
+        WyomingSatellitePipelineTotalSensor(device),
     ]
 
     if capabilities := device.capabilities:
@@ -552,5 +557,73 @@ class WyomingSatelliteLastSelftestAtSensor(_WyomingSatelliteDeviceSensorBase):
         name="Last self-test at",
         device_class=SensorDeviceClass.TIMESTAMP,
         icon="mdi:clock-check-outline",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+# ── Pipeline latency sensors ────────────────────────────────────────────
+
+
+class WyomingSatellitePipelineWakeToAudioSensor(_WyomingSatelliteDeviceSensorBase):
+    """Wake → first TTS audio (total user-perceived latency) in ms."""
+
+    _attr_native_value = None
+    entity_description = SensorEntityDescription(
+        key="pipeline_wake_to_audio_ms",
+        name="Pipeline wake→audio",
+        icon="mdi:timer-outline",
+        native_unit_of_measurement="ms",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+class WyomingSatellitePipelineSttSensor(_WyomingSatelliteDeviceSensorBase):
+    """STT inference latency (voice-stopped → transcript) in ms."""
+
+    _attr_native_value = None
+    entity_description = SensorEntityDescription(
+        key="pipeline_stt_ms",
+        name="Pipeline STT",
+        icon="mdi:microphone-message",
+        native_unit_of_measurement="ms",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+class WyomingSatellitePipelineLlmSensor(_WyomingSatelliteDeviceSensorBase):
+    """LLM response latency (transcript → synthesize) in ms."""
+
+    _attr_native_value = None
+    entity_description = SensorEntityDescription(
+        key="pipeline_llm_ms",
+        name="Pipeline LLM",
+        icon="mdi:brain",
+        native_unit_of_measurement="ms",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+class WyomingSatellitePipelineTtsSensor(_WyomingSatelliteDeviceSensorBase):
+    """TTS synthesis latency (synthesize → audio-start) in ms."""
+
+    _attr_native_value = None
+    entity_description = SensorEntityDescription(
+        key="pipeline_tts_ms",
+        name="Pipeline TTS",
+        icon="mdi:speaker-message",
+        native_unit_of_measurement="ms",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+class WyomingSatellitePipelineTotalSensor(_WyomingSatelliteDeviceSensorBase):
+    """Total pipeline latency (wake → audio-stop) in ms."""
+
+    _attr_native_value = None
+    entity_description = SensorEntityDescription(
+        key="pipeline_total_ms",
+        name="Pipeline total",
+        icon="mdi:timer",
+        native_unit_of_measurement="ms",
         entity_category=EntityCategory.DIAGNOSTIC,
     )

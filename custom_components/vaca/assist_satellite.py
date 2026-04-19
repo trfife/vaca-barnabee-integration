@@ -289,6 +289,29 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
                     },
                 )
 
+            elif evt.event_type == "pipeline-timing" and evt.event_data:
+                # Per-turn latency breakdown from the satellite.
+                async_dispatcher_send(
+                    self.hass,
+                    f"{DOMAIN}_{self.device.device_id}_status_update",
+                    {
+                        "sensors": {
+                            "pipeline_wake_to_audio_ms": evt.event_data.get("wake_to_first_audio_ms"),
+                            "pipeline_stt_ms": evt.event_data.get("voice_stopped_to_transcript_ms"),
+                            "pipeline_llm_ms": evt.event_data.get("transcript_to_synthesize_ms"),
+                            "pipeline_tts_ms": evt.event_data.get("synthesize_to_audio_start_ms"),
+                            "pipeline_total_ms": evt.event_data.get("wake_to_done_ms"),
+                        }
+                    },
+                )
+                self.hass.bus.async_fire(
+                    "vaca_pipeline_timing",
+                    {
+                        "device_id": self.device.device_id,
+                        **evt.event_data,
+                    },
+                )
+
             async_dispatcher_send(
                 self.hass,
                 f"{DOMAIN}_{self.device.device_id}_{evt.event_type}_update",

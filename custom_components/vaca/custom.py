@@ -38,6 +38,7 @@ class CustomActions(StrEnum):
     SCREEN_WAKE = "screen-wake"
     TOAST_MESSAGE = "toast-message"
     WAKE = "wake"
+    GET_LOGS = "get-logs"
 
 
 @dataclass

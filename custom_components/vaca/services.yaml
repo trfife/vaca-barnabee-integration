@@ -1,0 +1,17 @@
+get_logs:
+  name: Pull on-device logs
+  description: >
+    Request the in-memory log buffer from one or more VACA satellites.
+    Saved to /config/vaca_logs/<device_id>-<timestamp>.log. Also fires
+    the vaca_logs_saved HA event when the file is written.
+  fields:
+    device_id:
+      name: Device ID
+      description: >
+        HA device_id of the satellite (optional; omit to pull from all
+        connected satellites). Accepts a single id or a list.
+      required: false
+      example: "abc123def456"
+      selector:
+        device:
+          integration: vaca

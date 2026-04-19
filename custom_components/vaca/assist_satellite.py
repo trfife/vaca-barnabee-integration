@@ -209,6 +209,12 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
                 )
                 self.hass.bus.async_fire("vaca_error_occurred", payload)
 
+            elif evt.event_type == "logs-response" and evt.event_data:
+                # On-demand log bundle from the satellite. Decode and save
+                # under /config/vaca_logs/. Keeps the on-device buffer opaque
+                # to the rest of HA and supports offline analysis.
+                await self._save_logs_response(evt.event_data)
+
             async_dispatcher_send(
                 self.hass,
                 f"{DOMAIN}_{self.device.device_id}_{evt.event_type}_update",
@@ -217,6 +223,51 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
             return False, None
 
         return True, event
+
+    async def _save_logs_response(self, data: dict[str, Any]) -> None:
+        """Persist a logs-response payload to /config/vaca_logs/."""
+        import base64
+        import gzip
+        import os
+        from datetime import datetime
+
+        try:
+            raw_b64 = data.get("data", "")
+            encoding = data.get("encoding", "")
+            if not raw_b64:
+                _LOGGER.warning("Empty logs-response from %s", self.device.device_id)
+                return
+
+            def _decode_and_write() -> str:
+                payload = base64.b64decode(raw_b64)
+                if encoding == "gzip+base64":
+                    payload = gzip.decompress(payload)
+                log_dir = self.hass.config.path("vaca_logs")
+                os.makedirs(log_dir, exist_ok=True)
+                ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+                path = os.path.join(log_dir, f"{self.device.device_id}-{ts}.log")
+                with open(path, "wb") as f:
+                    f.write(payload)
+                return path
+
+            path = await self.hass.async_add_executor_job(_decode_and_write)
+            _LOGGER.info(
+                "Saved %s log lines from %s to %s",
+                data.get("lines", "?"),
+                self.device.device_id,
+                path,
+            )
+            self.hass.bus.async_fire(
+                "vaca_logs_saved",
+                {
+                    "device_id": self.device.device_id,
+                    "satellite": self.entity_id,
+                    "path": path,
+                    "lines": data.get("lines", 0),
+                },
+            )
+        except Exception:  # pragma: no cover
+            _LOGGER.exception("Failed to save logs-response from %s", self.device.device_id)
 
     async def _connect(self) -> None:
         """Connect to satellite over TCP.  Uses custom TCP client to allow callbacks on send."""

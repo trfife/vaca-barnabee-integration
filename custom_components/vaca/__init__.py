@@ -20,7 +20,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .client import AsyncTcpClient
 from .const import ATTR_SPEAKER, DOMAIN
-from .custom import CustomEvent
+from .custom import CustomActions, CustomEvent
 from .devices import VASatelliteDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,6 +54,34 @@ class WyomingError(HomeAssistantError):
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Wyoming integration."""
     async_register_websocket_api(hass)
+
+    async def _handle_get_logs(call) -> None:
+        """Request an on-demand log pull from one or more satellites."""
+        device_ids = call.data.get("device_id") or []
+        if isinstance(device_ids, str):
+            device_ids = [device_ids]
+
+        matched = 0
+        for entry_item in hass.data.get(DOMAIN, {}).values():
+            device = getattr(entry_item, "device", None)
+            if device is None:
+                continue
+            if device_ids and device.device_id not in device_ids:
+                continue
+            device.send_custom_action(CustomActions.GET_LOGS)
+            matched += 1
+
+        if not matched:
+            _LOGGER.warning(
+                "vaca.get_logs: no matching satellite found (device_id=%s)",
+                device_ids or "<all>",
+            )
+
+    hass.services.async_register(
+        DOMAIN,
+        "get_logs",
+        _handle_get_logs,
+    )
 
     return True
 

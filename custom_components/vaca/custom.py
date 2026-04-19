@@ -40,6 +40,7 @@ class CustomActions(StrEnum):
     WAKE = "wake"
     GET_LOGS = "get-logs"
     RESET_PIPELINE = "reset-pipeline"
+    AUDIO_SELFTEST = "audio-selftest"
 
 
 @dataclass

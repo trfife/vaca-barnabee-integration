@@ -111,6 +111,34 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         _handle_reset_pipeline,
     )
 
+    async def _handle_audio_selftest(call) -> None:
+        """Kick off an on-device audio loopback self-test."""
+        device_ids = call.data.get("device_id") or []
+        if isinstance(device_ids, str):
+            device_ids = [device_ids]
+
+        matched = 0
+        for entry_item in hass.data.get(DOMAIN, {}).values():
+            device = getattr(entry_item, "device", None)
+            if device is None:
+                continue
+            if device_ids and device.device_id not in device_ids:
+                continue
+            device.send_custom_action(CustomActions.AUDIO_SELFTEST)
+            matched += 1
+
+        if not matched:
+            _LOGGER.warning(
+                "vaca.audio_selftest: no matching satellite found (device_id=%s)",
+                device_ids or "<all>",
+            )
+
+    hass.services.async_register(
+        DOMAIN,
+        "audio_selftest",
+        _handle_audio_selftest,
+    )
+
     return True
 
 

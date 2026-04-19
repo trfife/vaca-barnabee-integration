@@ -251,6 +251,40 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
                     },
                 )
 
+            elif evt.event_type == "selftest-result" and evt.event_data:
+                # Audio loopback self-test outcome.
+                passed = evt.event_data.get("passed")
+                started_ms = evt.event_data.get("started_at") or 0
+                started_iso: str | None = None
+                if started_ms:
+                    from datetime import datetime, timezone
+
+                    started_iso = datetime.fromtimestamp(
+                        started_ms / 1000.0, tz=timezone.utc
+                    ).isoformat()
+                async_dispatcher_send(
+                    self.hass,
+                    f"{DOMAIN}_{self.device.device_id}_status_update",
+                    {
+                        "sensors": {
+                            "last_selftest_passed": (
+                                "pass" if passed else "fail"
+                            ) if passed is not None else None,
+                            "last_selftest_delta_db": evt.event_data.get(
+                                "rms_delta_dbfs"
+                            ),
+                            "last_selftest_at": started_iso,
+                        }
+                    },
+                )
+                self.hass.bus.async_fire(
+                    "vaca_selftest_completed",
+                    {
+                        "device_id": self.device.device_id,
+                        **evt.event_data,
+                    },
+                )
+
             async_dispatcher_send(
                 self.hass,
                 f"{DOMAIN}_{self.device.device_id}_{evt.event_type}_update",

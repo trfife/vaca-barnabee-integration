@@ -59,6 +59,9 @@ async def async_setup_entry(
         WyomingSatelliteLastWakeScoreSensor(device),
         WyomingSatelliteLastWakeThresholdSensor(device),
         WyomingSatelliteLastWakeWordSensor(device),
+        WyomingSatelliteLastSelftestPassedSensor(device),
+        WyomingSatelliteLastSelftestDeltaSensor(device),
+        WyomingSatelliteLastSelftestAtSensor(device),
     ]
 
     if capabilities := device.capabilities:
@@ -511,5 +514,43 @@ class WyomingSatelliteLastWakeWordSensor(_WyomingSatelliteDeviceSensorBase):
         key="last_wake_word",
         name="Last wake word",
         icon="mdi:account-voice",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+class WyomingSatelliteLastSelftestPassedSensor(_WyomingSatelliteDeviceSensorBase):
+    """Pass/fail verdict of the most recent audio self-test."""
+
+    _attr_native_value = UNKNOWN
+    entity_description = SensorEntityDescription(
+        key="last_selftest_passed",
+        name="Last self-test",
+        icon="mdi:check-decagram-outline",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+class WyomingSatelliteLastSelftestDeltaSensor(_WyomingSatelliteDeviceSensorBase):
+    """RMS delta (dB) observed during the last audio self-test."""
+
+    _attr_native_value = UNKNOWN
+    entity_description = SensorEntityDescription(
+        key="last_selftest_delta_db",
+        name="Last self-test delta",
+        icon="mdi:sine-wave",
+        native_unit_of_measurement="dB",
+        suggested_display_precision=1,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+class WyomingSatelliteLastSelftestAtSensor(_WyomingSatelliteDeviceSensorBase):
+    """Timestamp of the last audio self-test run."""
+
+    _attr_native_value = UNKNOWN
+    entity_description = SensorEntityDescription(
+        key="last_selftest_at",
+        name="Last self-test at",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        icon="mdi:clock-check-outline",
         entity_category=EntityCategory.DIAGNOSTIC,
     )

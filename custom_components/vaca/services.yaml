@@ -33,3 +33,21 @@ reset_pipeline:
       selector:
         device:
           integration: vaca
+
+audio_selftest:
+  name: Run audio self-test
+  description: >
+    Play a short tone through the speaker and verify the mic picks it up.
+    Result is emitted as a vaca_selftest_completed event and surfaced
+    on the StardeckOffice Last self-test sensors.
+  fields:
+    device_id:
+      name: Device ID
+      description: >
+        HA device_id of the satellite (optional; omit to run on all
+        connected satellites). Accepts a single id or a list.
+      required: false
+      example: "abc123def456"
+      selector:
+        device:
+          integration: vaca

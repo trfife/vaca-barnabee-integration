@@ -48,6 +48,11 @@ async def async_setup_entry(
         WyomingSatelliteIntentSensor(device),
         WyomingSatelliteOrientationSensor(device),
         WyomingSatelliteBrowserPathSensor(device),
+        WyomingSatelliteStateSensor(device),
+        WyomingSatellitePipelineStageSensor(device),
+        WyomingSatelliteLastWakeSensor(device),
+        WyomingSatelliteLastPipelineSuccessSensor(device),
+        WyomingSatelliteLastErrorSensor(device),
     ]
 
     if capabilities := device.capabilities:
@@ -350,3 +355,86 @@ class WyomingSatelliteAppVersionSensor(_WyomingSatelliteDeviceSensorBase):
         ):
             return [sensor.get("name") for sensor in sensors]
         return None
+
+
+# --- Barnabee fork: dashboard-visibility sensors ---------------------------
+#
+# These are fed by the satellite's periodic status heartbeat
+# (P4.5a / commit e3b1aad on vaca-barnabee-android). The phone pushes
+# `sensors.satellite_state` etc. on every pipeline transition plus a ~14s
+# timer, so HA's `last_updated` stays fresh even when idle.
+#
+# `satellite_state` is the coarse user-facing phase used by the Barnabee
+# dashboard to show listening / thinking / talking badges. `pipeline_stage`
+# is the fine-grained internal stage, surfaced as a diagnostic entity.
+
+SATELLITE_PHASE_OPTIONS = [
+    "idle",
+    "listening",
+    "thinking",
+    "talking",
+    "error",
+    "paused",
+]
+
+
+class WyomingSatelliteStateSensor(_WyomingSatelliteDeviceSensorBase):
+    """Coarse pipeline phase for the Barnabee dashboard."""
+
+    _attr_native_value = UNKNOWN
+    entity_description = SensorEntityDescription(
+        key="satellite_state",
+        name="Satellite state",
+        icon="mdi:account-voice",
+        device_class=SensorDeviceClass.ENUM,
+        options=SATELLITE_PHASE_OPTIONS,
+    )
+
+
+class WyomingSatellitePipelineStageSensor(_WyomingSatelliteDeviceSensorBase):
+    """Fine-grained pipeline stage (diagnostic)."""
+
+    _attr_native_value = UNKNOWN
+    entity_description = SensorEntityDescription(
+        key="pipeline_stage",
+        name="Pipeline stage",
+        icon="mdi:pipe",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+class WyomingSatelliteLastWakeSensor(_WyomingSatelliteDeviceSensorBase):
+    """Timestamp of the last wake-word detection."""
+
+    _attr_native_value = None
+    entity_description = SensorEntityDescription(
+        key="last_wake_at",
+        name="Last wake",
+        icon="mdi:ear-hearing",
+        device_class=SensorDeviceClass.TIMESTAMP,
+    )
+
+
+class WyomingSatelliteLastPipelineSuccessSensor(_WyomingSatelliteDeviceSensorBase):
+    """Timestamp of the last successful pipeline turn."""
+
+    _attr_native_value = None
+    entity_description = SensorEntityDescription(
+        key="last_pipeline_success_at",
+        name="Last pipeline success",
+        icon="mdi:check-circle-outline",
+        device_class=SensorDeviceClass.TIMESTAMP,
+    )
+
+
+class WyomingSatelliteLastErrorSensor(_WyomingSatelliteDeviceSensorBase):
+    """Timestamp of the last pipeline error."""
+
+    _attr_native_value = None
+    entity_description = SensorEntityDescription(
+        key="last_error_at",
+        name="Last error",
+        icon="mdi:alert-circle-outline",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )

@@ -1,3 +1,17 @@
+# Barnabee — View Assist Companion (fork)
+
+> **This is a fork of [msp1974/ViewAssist_Companion_App](https://github.com/msp1974/ViewAssist_Companion_App) maintained by @trfife.**
+> It pairs with the [Barnabee Android app](https://github.com/trfife/vaca-barnabee-android) and adds features used by the Barnabee voice-satellite project:
+> - `sensor.*_satellite_state` / `*_pipeline_stage` / `*_last_wake` / `*_last_pipeline_success` / `*_last_error` for dashboard "listening / thinking / talking" indicators and self-healing automations
+> - Companion to the app's P1 pipeline-epoch / stage-typed timeout fix (no more stuck-listening)
+> - Companion to the app's tameable activity watchdog (no more "yanked back to Barnabee" surprises)
+>
+> The `domain:` is kept as `vaca` so existing entity IDs and history carry over if you're switching from stock VACA. You can only install **one** of stock VACA or Barnabee at a time — swap by removing the other from HACS first.
+>
+> **Install via HACS →** HACS ▸ ⋮ ▸ Custom repositories ▸ URL = `https://github.com/trfife/vaca-barnabee-integration`, Category = Integration ▸ Add ▸ Install ▸ Restart HA.
+
+---
+
 # View Assist Companion
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)

@@ -56,6 +56,9 @@ async def async_setup_entry(
         WyomingSatelliteLastErrorSensor(device),
         WyomingSatelliteMicPeakLevelSensor(device),
         WyomingSatelliteMicRmsLevelSensor(device),
+        WyomingSatelliteLastWakeScoreSensor(device),
+        WyomingSatelliteLastWakeThresholdSensor(device),
+        WyomingSatelliteLastWakeWordSensor(device),
     ]
 
     if capabilities := device.capabilities:
@@ -470,5 +473,43 @@ class WyomingSatelliteMicRmsLevelSensor(_WyomingSatelliteDeviceSensorBase):
         icon="mdi:microphone",
         native_unit_of_measurement="dBFS",
         suggested_display_precision=1,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+class WyomingSatelliteLastWakeScoreSensor(_WyomingSatelliteDeviceSensorBase):
+    """Last wake-word detection confidence score."""
+
+    _attr_native_value = None
+    entity_description = SensorEntityDescription(
+        key="last_wake_score",
+        name="Last wake score",
+        icon="mdi:account-voice",
+        suggested_display_precision=3,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+class WyomingSatelliteLastWakeThresholdSensor(_WyomingSatelliteDeviceSensorBase):
+    """Wake-word threshold in effect at last detection."""
+
+    _attr_native_value = None
+    entity_description = SensorEntityDescription(
+        key="last_wake_threshold",
+        name="Last wake threshold",
+        icon="mdi:tune-variant",
+        suggested_display_precision=3,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+class WyomingSatelliteLastWakeWordSensor(_WyomingSatelliteDeviceSensorBase):
+    """Wake word string that triggered the last detection."""
+
+    _attr_native_value = UNKNOWN
+    entity_description = SensorEntityDescription(
+        key="last_wake_word",
+        name="Last wake word",
+        icon="mdi:account-voice",
         entity_category=EntityCategory.DIAGNOSTIC,
     )

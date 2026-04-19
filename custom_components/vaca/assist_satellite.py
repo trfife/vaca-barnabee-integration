@@ -237,6 +237,20 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
                     },
                 )
 
+            elif evt.event_type == "wake-score" and evt.event_data:
+                # Wake-word confidence + threshold at detection time.
+                async_dispatcher_send(
+                    self.hass,
+                    f"{DOMAIN}_{self.device.device_id}_status_update",
+                    {
+                        "sensors": {
+                            "last_wake_score": evt.event_data.get("score"),
+                            "last_wake_threshold": evt.event_data.get("threshold"),
+                            "last_wake_word": evt.event_data.get("wake_word"),
+                        }
+                    },
+                )
+
             async_dispatcher_send(
                 self.hass,
                 f"{DOMAIN}_{self.device.device_id}_{evt.event_type}_update",

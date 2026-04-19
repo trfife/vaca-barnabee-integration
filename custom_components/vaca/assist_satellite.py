@@ -191,6 +191,24 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
                     evt.event_data,
                 )
 
+            elif evt.event_type == "error-event" and evt.event_data:
+                # Structured error from the satellite. Fire an HA bus event
+                # so automations (and the future agentic repair orchestrator)
+                # can react. Keep the original dispatcher_send below for
+                # in-integration consumers.
+                payload = dict(evt.event_data)
+                payload["device_id"] = self.device.device_id
+                payload["satellite"] = self.entity_id
+                _LOGGER.warning(
+                    "VACA error on %s: [%s/%s/%s] %s",
+                    self.device.device_id,
+                    payload.get("severity"),
+                    payload.get("component"),
+                    payload.get("code"),
+                    payload.get("message"),
+                )
+                self.hass.bus.async_fire("vaca_error_occurred", payload)
+
             async_dispatcher_send(
                 self.hass,
                 f"{DOMAIN}_{self.device.device_id}_{evt.event_type}_update",

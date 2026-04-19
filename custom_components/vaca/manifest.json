@@ -16,6 +16,6 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/trfife/vaca-barnabee-integration/issues",
   "requirements": ["wyoming>=1.7.1"],
-  "version": "0.11.0-barnabee",
+  "version": "0.11.1-barnabee",
   "zeroconf": ["_vaca._tcp.local."]
 }

@@ -19,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util.dt import now, parse_datetime
 
 from .const import DOMAIN
+from ._censor import censor
 from .devices import VASatelliteDevice
 from .entity import VASatelliteEntity
 
@@ -92,6 +93,7 @@ class WyomingSatelliteSTTSensor(VASatelliteEntity, RestoreSensor):
     def _value_changed(self, value: str) -> None:
         """Call when value changed."""
         if value:
+            value = censor(value) or value
             if len(value) > 254:
                 # Limit the length of the value to avoid issues with Home Assistant
                 value = value[:252] + ".."
@@ -121,6 +123,7 @@ class WyomingSatelliteTTSSensor(VASatelliteEntity, RestoreSensor):
     def _value_changed(self, value: str) -> None:
         """Call when value changed."""
         if value:
+            value = censor(value) or value
             if len(value) > 254:
                 # Limit the length of the value to avoid issues with Home Assistant
                 value = value[:252] + ".."
@@ -161,6 +164,7 @@ class WyomingSatelliteIntentSensor(VASatelliteEntity, RestoreSensor):
                 self.get_key("intent_output.response.speech.plain.speech", data)
             )
             if value:
+                value = censor(value) or value
                 if len(value) > 254:
                     # Limit the length of the value to avoid issues with Home Assistant
                     value = value[:252] + ".."

@@ -213,14 +213,18 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
                 # On-demand log bundle from the satellite. Decode and save
                 # under /config/vaca_logs/. Keeps the on-device buffer opaque
                 # to the rest of HA and supports offline analysis.
-                await self._save_logs_response(evt.event_data)
+                self.hass.async_create_task(
+                    self._save_logs_response(evt.event_data)
+                )
 
             elif evt.event_type == "crash-report" and evt.event_data:
                 # Persisted uncaught exception from the previous session.
                 # Save under /config/vaca_logs/crashes/ and fire a bus
                 # event so an operator can be notified / orchestrator can
                 # investigate.
-                await self._save_crash_report(evt.event_data)
+                self.hass.async_create_task(
+                    self._save_crash_report(evt.event_data)
+                )
 
             elif evt.event_type == "mic-level" and evt.event_data:
                 # Throttled mic level report from the satellite. Surface

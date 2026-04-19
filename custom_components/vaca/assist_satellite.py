@@ -311,6 +311,10 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
                         **evt.event_data,
                     },
                 )
+                # Append to CSV log for experiment comparison.
+                self.hass.async_create_task(
+                    self._append_timing_csv(evt.event_data)
+                )
 
             async_dispatcher_send(
                 self.hass,
@@ -409,6 +413,42 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
             )
         except Exception:  # pragma: no cover
             _LOGGER.exception("Failed to save crash-report from %s", self.device.device_id)
+
+    async def _append_timing_csv(self, data: dict[str, Any]) -> None:
+        """Append a pipeline-timing row to /config/vaca_logs/pipeline_timing.csv."""
+        import os
+        from datetime import datetime
+
+        try:
+            def _write() -> None:
+                log_dir = self.hass.config.path("vaca_logs")
+                os.makedirs(log_dir, exist_ok=True)
+                csv_path = os.path.join(log_dir, "pipeline_timing.csv")
+                write_header = not os.path.exists(csv_path)
+                cols = [
+                    "timestamp", "device_id",
+                    "wake_to_transcribe_ms",
+                    "transcribe_to_voice_started_ms",
+                    "voice_started_to_stopped_ms",
+                    "voice_stopped_to_transcript_ms",
+                    "transcript_to_synthesize_ms",
+                    "synthesize_to_audio_start_ms",
+                    "audio_start_to_audio_stop_ms",
+                    "wake_to_first_audio_ms",
+                    "wake_to_done_ms",
+                ]
+                with open(csv_path, "a", encoding="utf-8") as f:
+                    if write_header:
+                        f.write(",".join(cols) + "\n")
+                    row = [
+                        datetime.now().isoformat(),
+                        self.device.device_id,
+                    ] + [str(data.get(c, "")) for c in cols[2:]]
+                    f.write(",".join(row) + "\n")
+
+            await self.hass.async_add_executor_job(_write)
+        except Exception:  # pragma: no cover
+            _LOGGER.exception("Failed to append pipeline timing CSV")
 
     async def _connect(self) -> None:
         """Connect to satellite over TCP.  Uses custom TCP client to allow callbacks on send."""

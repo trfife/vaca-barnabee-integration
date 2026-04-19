@@ -1,7 +1,7 @@
 {
   "domain": "vaca",
-  "name": "View Assist Companion App",
-  "codeowners": ["@msp1974"],
+  "name": "Barnabee (View Assist Companion fork)",
+  "codeowners": ["@trfife"],
   "config_flow": true,
   "dependencies": [
     "assist_satellite",
@@ -11,11 +11,11 @@
     "ffmpeg",
     "wyoming"
   ],
-  "documentation": "https://github.com/msp1974/ViewAssist_Companion_App",
+  "documentation": "https://github.com/trfife/vaca-barnabee-integration",
   "integration_type": "service",
   "iot_class": "local_push",
-  "issue_tracker": "https://github.com/msp1974/ViewAssist_Companion_App/issues",
+  "issue_tracker": "https://github.com/trfife/vaca-barnabee-integration/issues",
   "requirements": ["wyoming>=1.7.1"],
-  "version": "0.10.0",
+  "version": "0.11.0-barnabee",
   "zeroconf": ["_vaca._tcp.local."]
 }

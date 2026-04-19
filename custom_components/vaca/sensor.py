@@ -54,6 +54,8 @@ async def async_setup_entry(
         WyomingSatelliteLastWakeSensor(device),
         WyomingSatelliteLastPipelineSuccessSensor(device),
         WyomingSatelliteLastErrorSensor(device),
+        WyomingSatelliteMicPeakLevelSensor(device),
+        WyomingSatelliteMicRmsLevelSensor(device),
     ]
 
     if capabilities := device.capabilities:
@@ -440,5 +442,33 @@ class WyomingSatelliteLastErrorSensor(_WyomingSatelliteDeviceSensorBase):
         name="Last error",
         icon="mdi:alert-circle-outline",
         device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+class WyomingSatelliteMicPeakLevelSensor(_WyomingSatelliteDeviceSensorBase):
+    """Rolling mic peak level in dBFS (negative is quieter)."""
+
+    _attr_native_value = None
+    entity_description = SensorEntityDescription(
+        key="mic_peak_dbfs",
+        name="Mic peak",
+        icon="mdi:microphone-plus",
+        native_unit_of_measurement="dBFS",
+        suggested_display_precision=1,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+
+class WyomingSatelliteMicRmsLevelSensor(_WyomingSatelliteDeviceSensorBase):
+    """Rolling mic RMS level in dBFS (negative is quieter)."""
+
+    _attr_native_value = None
+    entity_description = SensorEntityDescription(
+        key="mic_rms_dbfs",
+        name="Mic RMS",
+        icon="mdi:microphone",
+        native_unit_of_measurement="dBFS",
+        suggested_display_precision=1,
         entity_category=EntityCategory.DIAGNOSTIC,
     )

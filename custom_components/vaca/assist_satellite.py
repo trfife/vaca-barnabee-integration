@@ -222,6 +222,21 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
                 # investigate.
                 await self._save_crash_report(evt.event_data)
 
+            elif evt.event_type == "mic-level" and evt.event_data:
+                # Throttled mic level report from the satellite. Surface
+                # as two sensor values by piggybacking on the standard
+                # status_update dispatcher signal.
+                async_dispatcher_send(
+                    self.hass,
+                    f"{DOMAIN}_{self.device.device_id}_status_update",
+                    {
+                        "sensors": {
+                            "mic_peak_dbfs": evt.event_data.get("peak_dbfs"),
+                            "mic_rms_dbfs": evt.event_data.get("rms_dbfs"),
+                        }
+                    },
+                )
+
             async_dispatcher_send(
                 self.hass,
                 f"{DOMAIN}_{self.device.device_id}_{evt.event_type}_update",

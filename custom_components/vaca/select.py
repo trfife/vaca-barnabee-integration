@@ -62,6 +62,7 @@ async def async_setup_entry(
             WyomingSatelliteWakeWordSoundSelect(device),
             WyomingSatelliteScreenTimeoutSelect(device),
             WyomingSatelliteScreenOrientationModeSelect(device),
+            WyomingSatelliteScreensaverModeSelect(device),
         ]
     )
 
@@ -320,3 +321,121 @@ class WyomingSatelliteScreenOrientationModeSelect(
         self._attr_current_option = option
         self.async_write_ha_state()
         self._device.set_custom_setting("screen_orientation_mode", option)
+
+
+# All available bg-animation screensaver options from ibz0q/lovelace-bg-animation
+SCREENSAVER_MODE_OPTIONS = [
+    "slideshow",
+    "animation.1.home-assistant-particles",
+    "application.1.media-background",
+    "generator.1.svg-wave",
+    "animation.2.shooting-stars",
+    "generator.2.knots",
+    "animation.3.spipa-circle",
+    "animation.4.colored-swipe",
+    "animation.5.neon-hexagon",
+    "animation.5.plasma",
+    "animation.6.binary-spiral",
+    "animation.7.rainbowness",
+    "animation.9.rainbow-particles",
+    "animation.10.css-dark-particles",
+    "animation.11.space",
+    "animation.12.gradient-particles",
+    "animation.13.cyber-lights",
+    "animation.14.ribbons-two",
+    "animation.15.sound",
+    "animation.16.veil",
+    "animation.17.ribbons",
+    "animation.18.particle-cube",
+    "animation.19.trapped-particles",
+    "animation.20.manifold",
+    "animation.21.noise-abstraction",
+    "animation.22.cloth-ribbons",
+    "animation.23.ribbons-four",
+    "animation.24.trapped-gradient",
+    "animation.25.galactic-swimmers",
+    "animation.26.gpu-particles",
+    "animation.27.tron",
+    "animation.28.black-sand-flow-field-v2",
+    "animation.31.blooming-flower",
+    "animation.32.canvas-blending-gradient-circles",
+    "animation.33.canvas-bokeh",
+    "animation.34.canvas-color-teams",
+    "animation.35.canvas-light-explosion",
+    "animation.36.starfield",
+    "animation.46.codevember-05-simplex-vector-flow-field",
+    "animation.47.color-trails",
+    "animation.48.colorful-wanderers",
+    "animation.49.curved-lines",
+    "animation.50.sidelined",
+    "animation.52.polyhedron-galaxy",
+    "animation.53.stars",
+    "animation.54.stars-galaxy",
+    "animation.56.azimuthal-viscosity",
+    "animation.57.browniandrix-noise",
+    "animation.58.browniandrix-noise-l3",
+    "animation.59.dimension-two-and-a-half",
+    "animation.60.digital-frontier",
+    "animation.61.cube",
+    "animation.62.neural",
+    "animation.63.green-circuit",
+    "animation.64.howls-moving-castle",
+    "animation.65.cristal-lands",
+    "animation.66.fog-of-war",
+    "animation.67.fly-particle",
+    "animation.68.rgb-wave",
+    "animation.69.bit-ocean",
+    "animation.70.blur",
+    "animation.71.interactive-gradient",
+    "animation.72.playstation-3-bg-style",
+    "animation.73.alien-blackout-intro-scene-react-webgl",
+    "animation.74.dvd-screensaver",
+    "animation.75.hexagonal-truchet-10-print",
+    "animation.76.hexanimation",
+    "animation.77.hexanimation-2",
+    "animation.78.just-in-case",
+    "animation.79.canvas-ribbons",
+    "generator.79.more-columns",
+    "animation.80.particle-waves",
+    "animation.81.remember-windows",
+    "animation.82.storm",
+    "animation.83.strange-tubes",
+    "animation.84.troisjs-starfield",
+    "animation.85.truchet-10-print-imitation",
+    "generator.86.silky-carpet",
+    "animation.87.point-sprites",
+    "animation.88.fish-tank",
+    "animation.89.shamrocks",
+    "animation.90.aurora",
+    "animation.91.sliced-blobs",
+    "animation.92.aurora-v2",
+]
+
+
+class WyomingSatelliteScreensaverModeSelect(
+    VASatelliteEntity, SelectEntity, restore_state.RestoreEntity
+):
+    """Entity to select screensaver mode (slideshow or bg-animation)."""
+
+    entity_description = SelectEntityDescription(
+        key="screensaver_mode",
+        translation_key="screensaver_mode",
+        icon="mdi:monitor-shimmer",
+        entity_category=EntityCategory.CONFIG,
+    )
+    _attr_should_poll = False
+    _attr_current_option = "slideshow"
+    _attr_options = SCREENSAVER_MODE_OPTIONS
+
+    async def async_added_to_hass(self) -> None:
+        """When entity is added to Home Assistant."""
+        await super().async_added_to_hass()
+        state = await self.async_get_last_state()
+        if state is not None and state.state in self.options:
+            await self.async_select_option(state.state)
+
+    async def async_select_option(self, option: str) -> None:
+        """Select an option."""
+        self._attr_current_option = option
+        self.async_write_ha_state()
+        self._device.set_custom_setting("screensaver_mode", option)

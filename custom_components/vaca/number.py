@@ -58,6 +58,8 @@ async def async_setup_entry(
         entities.append(WyomingSatelliteRawProximityThresholdNumber(device))
     if device.supportBump():
         entities.append(WyomingSatelliteBumpDetectionSensitivityNumber(device))
+    entities.append(WyomingSatelliteScreensaverTimeoutNumber(device))
+    entities.append(WyomingSatellitePhotoDurationNumber(device))
     async_add_entities(entities)
 
 
@@ -417,3 +419,69 @@ class WyomingSatelliteRawProximityThresholdNumber(VASatelliteEntity, RestoreNumb
         self._attr_native_value = value
         self.async_write_ha_state()
         self._device.set_custom_setting(self.entity_description.key, value)
+
+
+class WyomingSatelliteScreensaverTimeoutNumber(VASatelliteEntity, RestoreNumber):
+    """Entity to set screensaver timeout in minutes."""
+
+    entity_description = NumberEntityDescription(
+        key="screensaver_timeout",
+        translation_key="screensaver_timeout",
+        icon="mdi:timer-outline",
+        native_unit_of_measurement="min",
+        entity_category=EntityCategory.CONFIG,
+    )
+    _attr_should_poll = False
+    _attr_native_min_value = 1
+    _attr_native_max_value = 30
+    _attr_native_step = 1
+    _attr_native_value = 2
+
+    async def async_added_to_hass(self) -> None:
+        """When entity is added to Home Assistant."""
+        await super().async_added_to_hass()
+        state = await self.async_get_last_state()
+        if state is not None:
+            await self.async_set_native_value(float(state.state))
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set new value."""
+        value = max(1, min(30, value))
+        self._attr_native_value = value
+        self.async_write_ha_state()
+        self._device.set_custom_setting(
+            self.entity_description.key, int(value)
+        )
+
+
+class WyomingSatellitePhotoDurationNumber(VASatelliteEntity, RestoreNumber):
+    """Entity to set photo slideshow duration in seconds."""
+
+    entity_description = NumberEntityDescription(
+        key="photo_duration",
+        translation_key="photo_duration",
+        icon="mdi:image-multiple",
+        native_unit_of_measurement="s",
+        entity_category=EntityCategory.CONFIG,
+    )
+    _attr_should_poll = False
+    _attr_native_min_value = 10
+    _attr_native_max_value = 300
+    _attr_native_step = 10
+    _attr_native_value = 60
+
+    async def async_added_to_hass(self) -> None:
+        """When entity is added to Home Assistant."""
+        await super().async_added_to_hass()
+        state = await self.async_get_last_state()
+        if state is not None:
+            await self.async_set_native_value(float(state.state))
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set new value."""
+        value = max(10, min(300, value))
+        self._attr_native_value = value
+        self.async_write_ha_state()
+        self._device.set_custom_setting(
+            self.entity_description.key, int(value)
+        )

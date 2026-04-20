@@ -51,3 +51,20 @@ audio_selftest:
       selector:
         device:
           integration: vaca
+
+navigate:
+  name: Navigate
+  description: Navigate satellite webview to a specific dashboard path
+  fields:
+    device_id:
+      name: Device ID
+      description: The device_id of the satellite to navigate
+      required: false
+      selector:
+        text:
+    path:
+      name: Path
+      description: Dashboard path (e.g., dashboard-barnabee/controls)
+      required: true
+      selector:
+        text:

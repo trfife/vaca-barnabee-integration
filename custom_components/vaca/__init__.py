@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from typing import Any
 
@@ -137,6 +138,29 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         DOMAIN,
         "audio_selftest",
         _handle_audio_selftest,
+    )
+
+    async def _handle_navigate(call) -> None:
+        """Navigate satellite webview to a dashboard path."""
+        device_id = call.data.get("device_id")
+        path = call.data.get("path", "")
+        for entry_id, item in hass.data.get(DOMAIN, {}).items():
+            if hasattr(item, "device") and item.device is not None:
+                device = item.device
+                if device.device_id == device_id or device_id is None:
+                    device.send_custom_action(
+                        CustomActions.NAVIGATE, json.dumps({"path": path})
+                    )
+                    return
+        _LOGGER.warning(
+            "vaca.navigate: no matching satellite found (device_id=%s)",
+            device_id,
+        )
+
+    hass.services.async_register(
+        DOMAIN,
+        "navigate",
+        _handle_navigate,
     )
 
     return True

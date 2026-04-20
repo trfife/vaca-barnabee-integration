@@ -41,6 +41,7 @@ class CustomActions(StrEnum):
     GET_LOGS = "get-logs"
     RESET_PIPELINE = "reset-pipeline"
     AUDIO_SELFTEST = "audio-selftest"
+    NAVIGATE = "navigate"
 
 
 @dataclass

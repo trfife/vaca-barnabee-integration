@@ -254,6 +254,19 @@ class ViewAssistSatelliteEntity(WyomingAssistSatellite, VASatelliteEntity):
                         }
                     },
                 )
+                # Multi-device wake arbitration: fire bus event so the
+                # arbitration handler can compare mic levels across devices.
+                self.hass.bus.async_fire(
+                    "vaca_wake_detected",
+                    {
+                        "device_id": self.device.device_id,
+                        "satellite": self.entity_id,
+                        "mic_peak_dbfs": evt.event_data.get("mic_peak_dbfs", -120),
+                        "score": evt.event_data.get("score", 0),
+                        "wake_word": evt.event_data.get("wake_word", ""),
+                        "ts": evt.event_data.get("ts", ""),
+                    },
+                )
 
             elif evt.event_type == "selftest-result" and evt.event_data:
                 # Audio loopback self-test outcome.

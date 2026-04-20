@@ -42,6 +42,7 @@ class CustomActions(StrEnum):
     RESET_PIPELINE = "reset-pipeline"
     AUDIO_SELFTEST = "audio-selftest"
     NAVIGATE = "navigate"
+    STAND_DOWN = "stand-down"
 
 
 @dataclass

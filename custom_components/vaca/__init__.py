@@ -163,6 +163,61 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         _handle_navigate,
     )
 
+    # ── Multi-device wake arbitration ──────────────────────────────────
+    # When multiple satellites hear the wake word simultaneously, we pick
+    # the one with the highest mic level (closest to the speaker) and
+    # send stand-down to the others.
+    _wake_events: dict[str, dict] = {}
+    _wake_timer_handle: asyncio.TimerHandle | None = None
+    ARBITRATION_WINDOW_S = 0.5  # 500ms collection window
+
+    def _resolve_wake_arbitration(_now=None):
+        nonlocal _wake_timer_handle
+        _wake_timer_handle = None
+        if len(_wake_events) <= 1:
+            # Only one device heard the wake — no arbitration needed.
+            _wake_events.clear()
+            return
+
+        # Pick the device with the highest mic peak (least negative dBFS)
+        winner = max(_wake_events.items(), key=lambda x: x[1].get("mic_peak_dbfs", -120))
+        winner_id = winner[0]
+        _LOGGER.info(
+            "Wake arbitration: %d devices heard wake. Winner: %s (peak=%.1f dBFS)",
+            len(_wake_events), winner_id, winner[1].get("mic_peak_dbfs", -120),
+        )
+
+        # Send stand-down to losers
+        for device_id, wake_data in _wake_events.items():
+            if device_id == winner_id:
+                continue
+            _LOGGER.info("Sending stand-down to %s (peak=%.1f dBFS)", device_id, wake_data.get("mic_peak_dbfs", -120))
+            for entry_item in hass.data.get(DOMAIN, {}).values():
+                device = getattr(entry_item, "device", None)
+                if device is not None and device.device_id == device_id:
+                    device.send_custom_action(CustomActions.STAND_DOWN)
+                    break
+
+        _wake_events.clear()
+
+    async def _handle_wake_detected(event):
+        nonlocal _wake_timer_handle
+        data = event.data
+        device_id = data.get("device_id")
+        if not device_id:
+            return
+
+        _wake_events[device_id] = data
+
+        # Reset the arbitration timer
+        if _wake_timer_handle is not None:
+            _wake_timer_handle.cancel()
+        _wake_timer_handle = hass.loop.call_later(
+            ARBITRATION_WINDOW_S, _resolve_wake_arbitration
+        )
+
+    hass.bus.async_listen("vaca_wake_detected", _handle_wake_detected)
+
     return True
 
 
